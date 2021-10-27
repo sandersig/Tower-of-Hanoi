@@ -1,2 +1,2 @@
 # Tower-of-Hanoi
-Oblig 3 in INF122
+Oblig 2 in INF122
