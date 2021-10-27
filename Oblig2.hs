@@ -1,4 +1,4 @@
-start moves height tower1 = do 
+start moves height tower1 tower2 tower3 = do 
           c <- getLine
           let com = words c
           if(head com /= "q") then
@@ -8,32 +8,45 @@ start moves height tower1 = do
                   let height = read (head (tail com)) :: Int
                   if(height <= 1 || height > 12) then do
                       print "Unvalid nr of rings. The nr of rings needs to be between 2 and 12."
-                      start 0 1 ringPos
+                      start 0 1 tower1 tower2 tower3
                   else do
                     goto(0,0)
-                    drawTowers (height+1) height
+                    drawTowers (height + 1) height
                     putStr "\ESC[0J"
                     drawRings height 0 1
-                    goto(0, height+2)
-                    start 1 height (saveRingPos ringPos 1 (height + 1) height)
+                    goto(0, height + 2)
+                    start 1 height (saveRingPos tower1 height) tower2 tower3
               else do
                 let f = read (head com) :: Int
                     t = read (last com) :: Int
-                --doMove f t ringPos height
-                goto(0, height+2) 
-                putStrLn ("Number of moves: " ++ show moves)
-                print ringPos
-                start (moves + 1) height (saveRingPos ringPos 1 (height + 1) height)
+                    str = ("Number of moves: " ++ show moves)
+
+                if (f==1 && t==2) then doMoveHelper (doMove tower1 tower2)
+                else if (f==1 && t==3) then doMoveHelper (doMove tower1 tower3)
+                else if (f==2 && t==3) then doMoveHelper (doMove tower2 tower3)
+                else if (f==2 && t==1) then doMoveHelper (doMove tower2 tower1)
+                else if (f==3 && t==2) then doMoveHelper (doMove tower3 tower2)
+                else doMoveHelper (doMove tower3 tower1) 
+                goto(0, height + 2)
+                putStrLn str
+                start (moves + 1) height tower1 tower2 tower3     
           else return ()
 
--- dictionary med (tårnNr, posRing, breddePåRing) -> [(1, 5, 1), (1, 4, 2)]
+-- liste med breddePåRing -> [6,5,4,3,2,1]
 
-saveRingPos ringPos towerNr height width = if (width == 0) then ringPos
-                                           else saveRingPos (ringPos ++ [(towerNr, height, width)]) towerNr (height-1) (width-1)
+doMoveHelper towerList = print towerList
+                          
+doMove towerFrom towerTo = (towerFrom ++ [last towerTo]) 
+                           
 
---doMove f t ringPos height = saveRingPos ringPos t height                     
+saveRingPos towerNr width = if (width == 0) then towerNr
+                            else saveRingPos (towerNr ++ [width]) (width - 1)
 
-removeRing height width = writeAt (1, (height-4)) (concat (take 3 (repeat ((concat (take (width `div` 2) (repeat "  "))) ++ "|" ++ (concat (take (width `div` 2) (repeat "  ")))))))
+removeRingPos = undefined
+
+                    
+
+--removeRing height width = writeAt (1, (height-4)) (concat (take 3 (repeat ((concat (take (width `div` 2) (repeat "  "))) ++ "|" ++ (concat (take (width `div` 2) (repeat "  ")))))))
 
 drawRings height width spacing = if (height == 0) then return ()
                                  else do drawRing height width spacing
@@ -59,6 +72,6 @@ clr = putStr "\ESC[2J"
 goto :: (Int, Int) -> IO ()
 goto(x,y) = putStr("\ESC["++ show y ++";" ++ show x++"H")
 
---main :: IO ()
+main :: IO ()
 main = do putStrLn "Start a new game with: b <nbOfRings>, or quit with: q "
-          start 0 1 []
+          start 0 1 ([] :: [Int]) ([] :: [Int]) ([] :: [Int]) 
