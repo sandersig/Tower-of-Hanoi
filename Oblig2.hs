@@ -1,7 +1,7 @@
 start moves height tower1 tower2 tower3 = do 
-          print tower1
-          print tower2
-          print tower3
+          --print tower1
+          --print tower2
+          --    print tower3
           c <- getLine
           let com = words c
           if(head com /= "q") then
@@ -16,8 +16,7 @@ start moves height tower1 tower2 tower3 = do
                     goto(0,0)
                     drawTowers (height + 1) height
                     putStr "\ESC[0J"
-                    drawRings [5] [5,3,2,1] [6,5]   height 1
-                    --drawRings (ringPos tower1 height) tower2 tower3 height 1
+                    drawRings (ringPos tower1 height) tower2 tower3 height height
                     goto(0, height + 2)
                     start 1 height (ringPos tower1 height) tower2 tower3
               else do
@@ -49,12 +48,30 @@ findCorrectTower f t tower1 tower2 tower3 | (f==1 && t==2) = (tower1, tower2)
                                           | (f==3 && t==1) = (tower3, tower1)
                                           | otherwise      = (tower3, tower2)
 
-nextRound moves height f t (towerFrom, towerTo) tower1 tower2 tower3 | (f==1 && t==2) = start (moves+1) height towerFrom towerTo tower3               
-                                                                     | (f==1 && t==3) = start (moves+1) height towerFrom tower2 towerTo
-                                                                     | (f==2 && t==3) = start (moves+1) height tower1 towerFrom towerTo
-                                                                     | (f==2 && t==1) = start (moves+1) height towerTo towerFrom tower3
-                                                                     | (f==3 && t==1) = start (moves+1) height towerTo tower2 towerFrom
-                                                                     | otherwise      = start (moves+1) height tower1 towerTo towerFrom                          
+nextRound moves height f t (towerFrom, towerTo) tower1 tower2 tower3 | (f==1 && t==2) = do goto(0,0)
+                                                                                           drawTowers (height + 1) height
+                                                                                           drawRings towerFrom towerTo tower3 height height
+                                                                                           start (moves+1) height towerFrom towerTo tower3               
+                                                                     | (f==1 && t==3) = do goto(0,0)
+                                                                                           drawTowers (height + 1) height
+                                                                                           drawRings towerFrom tower2 towerTo height height
+                                                                                           start (moves+1) height towerFrom tower2 towerTo
+                                                                     | (f==2 && t==3) = do goto(0,0)
+                                                                                           drawTowers (height + 1) height
+                                                                                           drawRings tower1 towerFrom towerTo height height
+                                                                                           start (moves+1) height tower1 towerFrom towerTo
+                                                                     | (f==2 && t==1) = do goto(0,0)
+                                                                                           drawTowers (height + 1) height
+                                                                                           drawRings towerTo towerFrom tower3 height height
+                                                                                           start (moves+1) height towerTo towerFrom tower3
+                                                                     | (f==3 && t==1) = do goto(0,0)
+                                                                                           drawTowers (height + 1) height
+                                                                                           drawRings towerTo tower2 towerFrom height height
+                                                                                           start (moves+1) height towerTo tower2 towerFrom
+                                                                     | otherwise      = do goto(0,0)
+                                                                                           drawTowers (height + 1) height
+                                                                                           drawRings tower1 towerTo towerFrom height height
+                                                                                           start (moves+1) height tower1 towerTo towerFrom                          
 
 statusPrinter moves height str = do goto(0, height + 2)
                                     putStrLn ("Number of moves: " ++ show moves)
@@ -64,45 +81,31 @@ statusPrinter moves height str = do goto(0, height + 2)
 
 ringPos towerNr n = reverse [x |x <- [1..n]]                           
 
-drawRings tower1 tower2 tower3 height spacing = if (odd height) then drawRingsOdd tower1 tower2 tower3 height spacing
-                                                else drawRingsPar tower1 tower2 tower3 height spacing
+drawRings tower1 tower2 tower3 height width = drawRingsOdd tower1 tower2 tower3 height width
 
-drawRingsOdd [] [] [] height spacing = return ()
-drawRingsOdd [] [] tower3 height spacing = do writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                              drawRings [] [] (tail tower3) (height-1) spacing
-drawRingsOdd [] tower2 [] height spacing = do writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
-                                              drawRings [] (tail tower2) [] (height-1) spacing
-drawRingsOdd tower1 [] [] height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                              drawRings (tail tower1) [] [] (height-1) spacing
-drawRingsOdd tower1 [] tower3 height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                  writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                                  drawRings (tail tower1) [] (tail tower3) (height-1) spacing
-drawRingsOdd [] tower2 tower3 height spacing = do writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
-                                                  writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                                  drawRings [] (tail tower2) (tail tower3) (height-1) spacing
-drawRingsOdd tower1 tower2 [] height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                  writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
-                                                  drawRings (tail tower1) (tail tower2) [] (height-1) spacing
-drawRingsOdd tower1 tower2 tower3 height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                      writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
-                                                      writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                                      drawRings (tail tower1) (tail tower2) (tail tower3) (height-1) spacing
-drawRingsPar [] [] [] height spacing = return ()
-drawRingsPar [] [] tower3 height spacing = undefined
-drawRingsPar [] tower2 [] height spacing = undefined
-drawRingsPar tower1 [] [] height spacing = undefined
-drawRingsPar tower1 [] tower3 height spacing = undefined
-drawRingsPar [] tower2 tower3 height spacing = undefined
-drawRingsPar tower1 tower2 [] height spacing = undefined
-drawRingsPar tower1 tower2 tower3 height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                      writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
-                                                      writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-    
-    
-                                                        --writeAt ((head tower1 + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                      --writeAt ((3*(head tower1) + 2), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
-                                                      --writeAt ((5*(head tower1)) + 5, (height + 1)) (concat (take (head tower3) (repeat("# "))))
-                 
+-- remove spacing
+
+drawRingsOdd [] [] [] height width = return ()
+drawRingsOdd [] [] tower3 height width = do writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                            drawRings [] [] (tail tower3) (height-1) width
+drawRingsOdd [] tower2 [] height width = do writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
+                                            drawRings [] (tail tower2) [] (height-1) width
+drawRingsOdd tower1 [] [] height width = do writeAt ((width - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                            drawRings (tail tower1) [] [] (height-1) width
+drawRingsOdd tower1 [] tower3 height width = do writeAt ((width - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                drawRings (tail tower1) [] (tail tower3) (height-1) width
+drawRingsOdd [] tower2 tower3 height width = do writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
+                                                writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                drawRings [] (tail tower2) (tail tower3) (height-1) width
+drawRingsOdd tower1 tower2 [] height width = do writeAt ((width - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
+                                                drawRings (tail tower1) (tail tower2) [] (height-1) width
+drawRingsOdd tower1 tower2 tower3 height width = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                    writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
+                                                    writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                    drawRings (tail tower1) (tail tower2) (tail tower3) (height-1) width
+                            
 -- draws all the tower-layers
 drawTowers height width = if height == 0 then return ()
                            else do writeRow height width
