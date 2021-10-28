@@ -5,7 +5,7 @@ start moves height tower1 tower2 tower3 = do
           c <- getLine
           let com = words c
           if(head com /= "q") then
-              if(head com == "b") then do
+              if(head com == "b") then do -- TODO: resette listene ved opprettelse av nytt brett
                   clr
                   let moves = 0 
                   let height = read (head (tail com)) :: Int
@@ -16,9 +16,10 @@ start moves height tower1 tower2 tower3 = do
                     goto(0,0)
                     drawTowers (height + 1) height
                     putStr "\ESC[0J"
-                    drawRings (saveRingPos tower1 height) tower2 tower3 height height 1
+                    drawRings [5] [5,3,2,1] [6,5]   height 1
+                    --drawRings (ringPos tower1 height) tower2 tower3 height 1
                     goto(0, height + 2)
-                    start 1 height (saveRingPos tower1 height) tower2 tower3
+                    start 1 height (ringPos tower1 height) tower2 tower3
               else do
                 let f = read (head com) :: Int
                     t = read (last com) :: Int
@@ -33,8 +34,6 @@ start moves height tower1 tower2 tower3 = do
                 else do statusPrinter moves height "Unvalid move"
                         start moves height tower1 tower2 tower3      
           else return ()
-
--- liste med breddePåRing -> [6,5,4,3] [2,1] [] -> spacing = towerHeight - ringSize
 
 legalMove ([], towerTo) = False
 legalMove (towerFrom, []) = True
@@ -63,38 +62,54 @@ statusPrinter moves height str = do goto(0, height + 2)
                                     putStrLn str
                                     putStr "\ESC[0J"
 
-saveRingPos towerNr width = if (width == 0) then towerNr
-                            else saveRingPos (towerNr ++ [width]) (width - 1)
+ringPos towerNr n = reverse [x |x <- [1..n]]                           
 
-removeRingPos = undefined
+drawRings tower1 tower2 tower3 height spacing = if (odd height) then drawRingsOdd tower1 tower2 tower3 height spacing
+                                                else drawRingsPar tower1 tower2 tower3 height spacing
 
---removeRing height width = writeAt (1, (height-4)) (concat (take 3 (repeat ((concat (take (width `div` 2) (repeat "  "))) ++ "|" ++ (concat (take (width `div` 2) (repeat "  ")))))))
-
-{-
-drawRings height width spacing = if (height == 0) then return ()
-                                 else do drawRing height width spacing
-                                         drawRings (height-1) width (spacing + 1)
--}
-
-drawRings tower1 tower2 tower3 towerHeight ringHeight spacing = if(length tower1 > 0) then do drawRing (head tower1) ringHeight spacing
-                                                                                              drawRings (tail tower1) tower2 tower3 towerHeight (ringHeight - 1) (spacing + 1)
-                                                                else do 
-                                                                    if(length tower2 > 0) then do let ringHeight = towerHeight
-                                                                                                  drawRing (head tower1) towerHeight (spacing + towerHeight)
-                                                                                                  drawRings (tail tower1) tower2 tower3 towerHeight (ringHeight - 1) (spacing + 1)
-                                                                    else return ()
-
-drawRing tower1 tower2 tower3 height spacing = writeAt (0, (height+1)) ((concat (take spacing (repeat " "))) ++ (concat (take height (repeat("# ")))))
-
---drawRing width height spacing = writeAt (0, (height+1)) ((concat (take spacing (repeat " "))) ++ (concat (take height (repeat("# ")))))      
-                  
+drawRingsOdd [] [] [] height spacing = return ()
+drawRingsOdd [] [] tower3 height spacing = do writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                              drawRings [] [] (tail tower3) (height-1) spacing
+drawRingsOdd [] tower2 [] height spacing = do writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
+                                              drawRings [] (tail tower2) [] (height-1) spacing
+drawRingsOdd tower1 [] [] height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                              drawRings (tail tower1) [] [] (height-1) spacing
+drawRingsOdd tower1 [] tower3 height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                  writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                  drawRings (tail tower1) [] (tail tower3) (height-1) spacing
+drawRingsOdd [] tower2 tower3 height spacing = do writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
+                                                  writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                  drawRings [] (tail tower2) (tail tower3) (height-1) spacing
+drawRingsOdd tower1 tower2 [] height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                  writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
+                                                  drawRings (tail tower1) (tail tower2) [] (height-1) spacing
+drawRingsOdd tower1 tower2 tower3 height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                      writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
+                                                      writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                      drawRings (tail tower1) (tail tower2) (tail tower3) (height-1) spacing
+drawRingsPar [] [] [] height spacing = return ()
+drawRingsPar [] [] tower3 height spacing = undefined
+drawRingsPar [] tower2 [] height spacing = undefined
+drawRingsPar tower1 [] [] height spacing = undefined
+drawRingsPar tower1 [] tower3 height spacing = undefined
+drawRingsPar [] tower2 tower3 height spacing = undefined
+drawRingsPar tower1 tower2 [] height spacing = undefined
+drawRingsPar tower1 tower2 tower3 height spacing = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                      writeAt ((3*height - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
+                                                      writeAt ((5*height- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+    
+    
+                                                        --writeAt ((head tower1 + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
+                                                      --writeAt ((3*(head tower1) + 2), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
+                                                      --writeAt ((5*(head tower1)) + 5, (height + 1)) (concat (take (head tower3) (repeat("# "))))
+                 
 -- draws all the tower-layers
 drawTowers height width = if height == 0 then return ()
                            else do writeRow height width
                                    drawTowers (height - 1) width
 
 -- draws each single tower-layer
-writeRow height width = putStrLn (concat (take 3 (repeat ((concat (take (width `div` 2) (repeat "  "))) ++ "|" ++ (concat (take (width `div` 2) (repeat "  ")))))))
+writeRow height width = putStrLn (concat (take 3 (repeat ((concat (take (width-1) (repeat " "))) ++ "|" ++ (concat (take width (repeat " ")))))))
 
 writeAt (x,y) str = do goto (x,y)
                        putStr str
