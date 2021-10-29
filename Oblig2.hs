@@ -22,9 +22,11 @@ hanoi moves history height tower1 tower2 tower3 str = do  -- game-loop
                 startGame com 
             else if(head com == "z") then do
                 let n = read (head (tail com)) :: Int
-                if(n >= moves) then
+                -- *** Exception: Prelude.last: empty list -> Fix
+                if(n > moves) then
                     resetAllMoves height history str
-                else print "hø"
+                else do
+                    undoNMoves height history moves n str   
             else do
                 let f = read (head com) :: Int
                     t = read (last com) :: Int
@@ -60,107 +62,17 @@ drawBoard height = do clr
                       drawTowers (height + 1) height
                       putStr "\ESC[0J"
 
---lagrer ikke korrekt
+undoNMoves height history moves n str = do goto(0,0) 
+                                           drawTowers (height + 1) height
+                                           let newHistory = (last (take (length history - n) history))
+                                           drawRings (fst3 newHistory) (snd3 newHistory) (trd3 newHistory) height height
+                                           hanoi (moves-n) [newHistory] height (fst3 newHistory) (snd3 newHistory) (trd3 newHistory) str
+
+--lagrer ikke korrekt, resetter til 2. siste history
 resetAllMoves height history str = do drawBoard height
                                       drawRings (ringPos (head history) height) [] [] height height
                                       let moves = 0
                                       hanoi moves [head history] height (fst3 (head history)) [] [] str
-
-{-
-start moves history height tower1 tower2 tower3 str = 
-    
-                clr
-                else do
-                    goto(0,0)
-                    drawTowers (height + 1) height
-                    putStr "\ESC[0J"
-                    let startRings = ringPos tower1 height
-                    drawRings startRings tower2 tower3 height height
-                    goto(0, height + 2) 
-                    start 0 (addHistory history startRings tower2 tower3) height startRings tower2 tower3 str
-            else if(head com == "z") then do -- TODO: *** Exception: Prelude.last: empty list
-                    let n = read (head (tail com)) :: Int
-                    if(n >= moves) then do
-                        goto(0,0) 
-                        drawTowers (height + 1) height
-                        drawRings (ringPos (head history) height) [] [] height height
-                        goto(0, height + 2)
-                        let moves = 0
-                        start 0 [head history] height (fst3 (head history)) [] [] str
-                    else do 
-                        goto(0,0) 
-                        drawTowers (height + 1) height
-                        drawRings (fst3 (last (take (length history - n) history))) (snd3 (last (take (length history - n) history))) (trd3 (last (take (length history - n) history))) height height
-                        start (moves-n) [(last (take (length history - n) history))] height (fst3 (last (take (length history - n) history))) (snd3 (last (take (length history - n) history))) (trd3 (last (take (length history - n) history))) str
-            else do
-                let f = read (head com) :: Int
-                    t = read (last com) :: Int
-                if ((f>0 && f<4) && (t>0 && t<4) && f /= t) then do
-                    let currentMove = findCorrectTower f t tower1 tower2 tower3
-                    if (legalMove currentMove) then do
-                        let doneMove = doMove currentMove
-                        nextRound moves history height f t doneMove tower1 tower2 tower3 str
-                    else start moves history height tower1 tower2 tower3 "Unvalid move"                        
-                else start moves history height tower1 tower2 tower3 "Unvalid move"      
-        else return ()
-
--}
-
-{-
-start moves history height tower1 tower2 tower3 str = 
-    if(length tower3 == height) then winnerPrinter (moves-1) height
-    else do
-        statusPrinter moves height str
-        c <- getLine
-        let com = words c
-        if(head com /= "q") then
-            if(head com == "b") then do
-                clr
-                -- reset all the tower-lists when starting a new game
-                let tower1 = [] :: [Int]
-                    tower2 = [] :: [Int]
-                    tower3 = [] :: [Int]
-                    history = [] :: [([Int],[Int],[Int])]
-                let moves = 0 
-                let height = read (head (tail com)) :: Int
-                if(height <= 1 || height > 12) then do
-                    print "Unvalid nr of rings. The nr of rings needs to be between 2 and 12."
-                    start 0 history 1 tower1 tower2 tower3 str
-                else do
-                    goto(0,0)
-                    drawTowers (height + 1) height
-                    putStr "\ESC[0J"
-                    let startRings = ringPos tower1 height
-                    drawRings startRings tower2 tower3 height height
-                    goto(0, height + 2) 
-                    start 0 (addHistory history startRings tower2 tower3) height startRings tower2 tower3 str
-            else if(head com == "z") then do -- TODO: *** Exception: Prelude.last: empty list
-                    let n = read (head (tail com)) :: Int
-                    if(n >= moves) then do
-                        goto(0,0) 
-                        drawTowers (height + 1) height
-                        drawRings (ringPos (head history) height) [] [] height height
-                        goto(0, height + 2)
-                        let moves = 0
-                        start 0 [head history] height (fst3 (head history)) [] [] str
-                    else do 
-                        goto(0,0) 
-                        drawTowers (height + 1) height
-                        drawRings (fst3 (last (take (length history - n) history))) (snd3 (last (take (length history - n) history))) (trd3 (last (take (length history - n) history))) height height
-                        start (moves-n) [(last (take (length history - n) history))] height (fst3 (last (take (length history - n) history))) (snd3 (last (take (length history - n) history))) (trd3 (last (take (length history - n) history))) str
-            else do
-                let f = read (head com) :: Int
-                    t = read (last com) :: Int
-                if ((f>0 && f<4) && (t>0 && t<4) && f /= t) then do
-                    let currentMove = findCorrectTower f t tower1 tower2 tower3
-                    if (legalMove currentMove) then do
-                        let doneMove = doMove currentMove
-                        nextRound moves history height f t doneMove tower1 tower2 tower3 str
-                    else start moves history height tower1 tower2 tower3 "Unvalid move"                        
-                else start moves history height tower1 tower2 tower3 "Unvalid move"      
-        else return ()
-
--}
 
 fst3 :: ([Int], [Int], [Int]) -> [Int]
 fst3 (x, _, _) = x
@@ -274,4 +186,3 @@ goto(x,y) = putStr("\ESC["++ show y ++";" ++ show x++"H")
 main :: IO ()
 main = do putStrLn "Start a new game with: b <nbOfRings>, or quit with: q "
           start
-          --start 0 [] 1 [] [] [] "                   "
