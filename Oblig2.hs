@@ -1,15 +1,16 @@
-
---TODO: refaktorer driten
+import Text.Read
+import Data.Maybe
 
 start :: IO ()
 start = do
     c <- getLine
     let com = words c
-    if(head com /= "q") then
-        if(head com == "b") then do
-            startGame com
-        else print "Unknown command"
-    else return ()
+    if(com == []) then start
+    else if(head com == "q") then return ()
+    else if(head com == "b") then startGame com
+    else do putStrLn "Unknown command" 
+            start
+    
 
 hanoi moves history height tower1 tower2 tower3 str = do  -- game-loop
     if(length tower3 == height) then winnerPrinter (moves-1) height
@@ -17,26 +18,31 @@ hanoi moves history height tower1 tower2 tower3 str = do  -- game-loop
         statusPrinter moves height str
         c <- getLine
         let com = words c
-        if(head com /= "q") then
+        if(com == []) then hanoi moves history height tower1 tower2 tower3 ""
+        else if(head com /= "q") then
             if(head com == "b") then do
                 startGame com 
             else if(head com == "z") then do
                 let n = read (head (tail com)) :: Int
-                -- *** Exception: Prelude.last: empty list -> Fix
-                if(n > moves) then
+                if((abs n) >= moves) then
                     resetAllMoves height history str
                 else do
-                    undoNMoves height history moves n str   
+                    undoNMoves height history moves (abs n) str   
             else do
-                let f = read (head com) :: Int
-                    t = read (last com) :: Int
-                if ((f>0 && f<4) && (t>0 && t<4) && f /= t) then do
+                let x = readMaybe (head com) :: Maybe Int
+                    y = readMaybe (last com) :: Maybe Int
+                if(isNothing x && isNothing y) then 
+                    hanoi moves history height tower1 tower2 tower3 "Unvalid move"
+                else do
+                let f = fromJust x
+                    t = fromJust y
+                if ((f>0 && t<4) && (f>0 && t<4) && f /= t) then do
                     let currentMove = findCorrectTower f t tower1 tower2 tower3
                     if (legalMove currentMove) then do
                         let doneMove = doMove currentMove
                         nextRound moves history height f t doneMove tower1 tower2 tower3 str
                     else hanoi moves history height tower1 tower2 tower3 "Unvalid move"                        
-                else hanoi moves history height tower1 tower2 tower3 "Unvalid move"
+                else hanoi moves history height tower1 tower2 tower3 "Unvalid move"     
         else return ()
 
 startGame com = do let height = read (head (tail com)) :: Int
@@ -46,15 +52,13 @@ startGame com = do let height = read (head (tail com)) :: Int
                        tower3 = [] :: [Int]
                        history = [] :: [([Int],[Int],[Int])] 
                    if(height <= 1 || height > 12) then do
-                        print "Unvalid nr of rings. The nr of rings needs to be between 2 and 12."
+                        putStrLn "Unvalid nr of rings. The nr of rings needs to be between 2 and 12."
                         start
                    else do
                         drawBoard height
                         let startRings = ringPos tower1 height
                         drawRings startRings tower2 tower3 height height 
                         hanoi moves (addHistory history startRings tower2 tower3) height startRings tower2 tower3 ""
-
--- slå sammen disse to metodene? <->
 
 drawBoard :: Int -> IO ()
 drawBoard height = do clr
@@ -81,12 +85,11 @@ snd3 (_, x, _) = x
 trd3 :: ([Int], [Int], [Int]) -> [Int]
 trd3 (_, _, x) = x
 
-statusPrinter moves height str = if moves == 0 then return ()
-                                 else do goto(0, height + 2)
-                                         putStrLn ("Number of moves: " ++ show moves)
-                                         goto(30, height + 2)
-                                         putStrLn str
-                                         putStr "\ESC[0J"
+statusPrinter moves height str = do goto(0, height + 2)
+                                    putStrLn ("Number of moves: " ++ show moves)
+                                    goto(30, height + 2)
+                                    putStrLn str
+                                    putStr "\ESC[0J"
 
 winnerPrinter moves height = do goto(0, height + 2)
                                 putStrLn ("You successfully completed the game on level " ++ show height ++ " using " ++ show moves ++ " moves!")
@@ -96,10 +99,10 @@ addHistory history tower1 tower2 tower3 = history ++ [(tower1, tower2, tower3)]
 
 ringPos towerNr n = reverse [x |x <- [1..n]]    
 
-legalMove ([], towerTo) = False
-legalMove (towerFrom, []) = True
+legalMove ([], towerTo)        = False
+legalMove (towerFrom, [])      = True
 legalMove (towerFrom, towerTo) | (last towerFrom > last towerTo) = False
-                               | otherwise = True
+                               | otherwise                       = True
                          
 doMove (towerFrom, towerTo) = ((init towerFrom), (towerTo ++ [last towerFrom]))
 
@@ -110,6 +113,7 @@ findCorrectTower f t tower1 tower2 tower3 | (f==1 && t==2) = (tower1, tower2)
                                           | (f==3 && t==1) = (tower3, tower1)
                                           | otherwise      = (tower3, tower2)
 
+-- TODO: Refaktorer denne og
 nextRound moves history height f t (towerFrom, towerTo) tower1 tower2 tower3 str    | (f==1 && t==2) = do goto(0,0)
                                                                                                           drawTowers (height + 1) height
                                                                                                           drawRings towerFrom towerTo tower3 height height
@@ -144,6 +148,7 @@ nextRound moves history height f t (towerFrom, towerTo) tower1 tower2 tower3 str
 drawRings tower1 tower2 tower3 height width = do drawRingLayer tower1 tower2 tower3 height width
                                                  goto(0, height + 2)
 
+-- TODO: Refaktorer denne metoden!
 drawRingLayer [] [] [] height width = return ()
 drawRingLayer [] [] tower3 height width = do writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
                                              drawRings [] [] (tail tower3) (height-1) width
@@ -166,9 +171,9 @@ drawRingLayer tower1 tower2 tower3 height width = do writeAt ((height - (head to
                                                      drawRings (tail tower1) (tail tower2) (tail tower3) (height-1) width
                             
 -- draws all the tower-layers
-drawTowers height width = if height == 0 then return ()
-                          else do writeTowerLayer height width
-                                  drawTowers (height - 1) width
+drawTowers 0 _ = return ()
+drawTowers height width = do writeTowerLayer height width
+                             drawTowers (height - 1) width
 
 -- draws each single tower-layer
 writeTowerLayer height width = putStrLn (concat (take 3 (repeat ((concat (take (width-1) (repeat " "))) ++ "|" ++ (concat (take width (repeat " ")))))))
