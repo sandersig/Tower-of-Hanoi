@@ -7,12 +7,15 @@ start = do
     let com = words c
     if(com == []) then start
     else if(head com == "q") then return ()
-    else if(head com == "b") then startGame com
+    else if(head com == "b") then do 
+        let h = readMaybe (head (tail com)) :: Maybe Int
+        if(isNothing h) then
+            start
+        else startGame (fromJust h)
     else do putStrLn "Unknown command" 
             start
     
-
-hanoi moves history height tower1 tower2 tower3 str = do  -- game-loop
+hanoi moves history height tower1 tower2 tower3 str = do
     if(length tower3 == height) then winnerPrinter (moves-1) height
     else do
         statusPrinter moves height str
@@ -21,13 +24,20 @@ hanoi moves history height tower1 tower2 tower3 str = do  -- game-loop
         if(com == []) then hanoi moves history height tower1 tower2 tower3 ""
         else if(head com /= "q") then
             if(head com == "b") then do
-                startGame com 
+                let h = readMaybe (head (tail com)) :: Maybe Int
+                if(isNothing h) then
+                    hanoi moves history height tower1 tower2 tower3 str
+                else startGame (fromJust h) 
             else if(head com == "z") then do
-                let n = read (head (tail com)) :: Int
-                if((abs n) >= moves) then
-                    resetAllMoves height history str
+                let x = readMaybe (head (tail com)) :: Maybe Int
+                if(isNothing x) then
+                    hanoi moves history height tower1 tower2 tower3 str
                 else do
-                    undoNMoves height history moves (abs n) str   
+                    let n = fromJust x    
+                    if((abs n) >= moves) then
+                        resetAllMoves height history str
+                    else do
+                        undoNMoves height history moves (abs n) str   
             else do
                 let x = readMaybe (head com) :: Maybe Int
                     y = readMaybe (last com) :: Maybe Int
@@ -45,20 +55,19 @@ hanoi moves history height tower1 tower2 tower3 str = do  -- game-loop
                 else hanoi moves history height tower1 tower2 tower3 "Unvalid move"     
         else return ()
 
-startGame com = do let height = read (head (tail com)) :: Int
-                       moves = 0
-                       tower1 = [] :: [Int]
-                       tower2 = [] :: [Int]
-                       tower3 = [] :: [Int]
-                       history = [] :: [([Int],[Int],[Int])] 
-                   if(height <= 1 || height > 12) then do
-                        putStrLn "Unvalid nr of rings. The nr of rings needs to be between 2 and 12."
-                        start
-                   else do
-                        drawBoard height
-                        let startRings = ringPos tower1 height
-                        drawRings startRings tower2 tower3 height height 
-                        hanoi moves (addHistory history startRings tower2 tower3) height startRings tower2 tower3 ""
+startGame height = do  let moves = 0
+                           tower1 = [] :: [Int]
+                           tower2 = [] :: [Int]
+                           tower3 = [] :: [Int]
+                           history = [] :: [([Int],[Int],[Int])] 
+                       if(height <= 1 || height > 12) then do
+                            putStrLn "Unvalid nr of rings. The nr of rings needs to be between 2 and 12."
+                            start
+                       else do
+                            drawBoard height
+                            let startRings = ringPos tower1 height
+                            drawRings startRings tower2 tower3 height height 
+                            hanoi moves (addHistory history startRings tower2 tower3) height startRings tower2 tower3 ""
 
 drawBoard :: Int -> IO ()
 drawBoard height = do clr
