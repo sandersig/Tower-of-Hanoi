@@ -122,7 +122,7 @@ findCorrectTower f t tower1 tower2 tower3 | (f==1 && t==2) = (tower1, tower2)
                                           | (f==3 && t==1) = (tower3, tower1)
                                           | otherwise      = (tower3, tower2)
 
--- TODO: Refaktorer denne og
+-- TODO: Refaktorer
 nextRound moves history height f t (towerFrom, towerTo) tower1 tower2 tower3 str    | (f==1 && t==2) = do goto(0,0)
                                                                                                           drawTowers (height + 1) height
                                                                                                           drawRings towerFrom towerTo tower3 height height
@@ -156,28 +156,29 @@ nextRound moves history height f t (towerFrom, towerTo) tower1 tower2 tower3 str
 
 drawRings tower1 tower2 tower3 height width = do drawRingLayer tower1 tower2 tower3 height width
                                                  goto(0, height + 2)
-
--- TODO: Refaktorer denne metoden!
-drawRingLayer [] [] [] height width = return ()
-drawRingLayer [] [] tower3 height width = do writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                             drawRings [] [] (tail tower3) (height-1) width
-drawRingLayer [] tower2 [] height width = do writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
-                                             drawRings [] (tail tower2) [] (height-1) width
-drawRingLayer tower1 [] [] height width = do writeAt ((width - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                             drawRings (tail tower1) [] [] (height-1) width
-drawRingLayer tower1 [] tower3 height width = do writeAt ((width - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                 writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                                 drawRings (tail tower1) [] (tail tower3) (height-1) width
-drawRingLayer [] tower2 tower3 height width = do writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
-                                                 writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
-                                                 drawRings [] (tail tower2) (tail tower3) (height-1) width
-drawRingLayer tower1 tower2 [] height width = do writeAt ((width - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                 writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))
-                                                 drawRings (tail tower1) (tail tower2) [] (height-1) width
-drawRingLayer tower1 tower2 tower3 height width = do writeAt ((height - (head tower1) + 1), (height + 1)) (concat (take (head tower1) (repeat("# "))))
-                                                     writeAt ((3*width - ((head tower2) - 1)), (height + 1)) (concat (take (head tower2) (repeat("# "))))                                        
-                                                     writeAt ((5*width- ((head tower3) - 1)), height + 1) (concat (take (head tower3) (repeat("# "))))
+                                                 
+drawRingLayer [] [] [] height width             = return ()
+drawRingLayer [] [] tower3 height width         = do drawRingLayerHelper 5 width height tower3
+                                                     drawRings [] [] (tail tower3) (height-1) width
+drawRingLayer [] tower2 [] height width         = do drawRingLayerHelper 3 width height tower2
+                                                     drawRings [] (tail tower2) [] (height-1) width
+drawRingLayer tower1 [] [] height width         = do drawRingLayerHelper 1 width height tower1
+                                                     drawRings (tail tower1) [] [] (height-1) width
+drawRingLayer tower1 [] tower3 height width     = do drawRingLayerHelper 1 width height tower1
+                                                     drawRingLayerHelper 5 width height tower3
+                                                     drawRings (tail tower1) [] (tail tower3) (height-1) width
+drawRingLayer [] tower2 tower3 height width     = do drawRingLayerHelper 3 width height tower2
+                                                     drawRingLayerHelper 5 width height tower3
+                                                     drawRings [] (tail tower2) (tail tower3) (height-1) width
+drawRingLayer tower1 tower2 [] height width     = do drawRingLayerHelper 1 width height tower1
+                                                     drawRingLayerHelper 3 width height tower2
+                                                     drawRings (tail tower1) (tail tower2) [] (height-1) width
+drawRingLayer tower1 tower2 tower3 height width = do drawRingLayerHelper 1 width height tower1
+                                                     drawRingLayerHelper 3 width height tower2
+                                                     drawRingLayerHelper 5 width height tower3
                                                      drawRings (tail tower1) (tail tower2) (tail tower3) (height-1) width
+
+drawRingLayerHelper n width height towerNr = writeAt ((n*width- ((head towerNr) - 1)), height + 1) (concat (take (head towerNr) (repeat("# "))))
                             
 -- draws all the tower-layers
 drawTowers 0 _ = return ()
@@ -200,3 +201,4 @@ goto(x,y) = putStr("\ESC["++ show y ++";" ++ show x++"H")
 main :: IO ()
 main = do putStrLn "Start a new game with: b <nbOfRings>, or quit with: q "
           start
+          
