@@ -41,7 +41,7 @@ hanoi moves history height tower1 tower2 tower3 str = do
             else do
                 let x = readMaybe (head com) :: Maybe Int
                     y = readMaybe (last com) :: Maybe Int
-                if(isNothing x && isNothing y) then 
+                if(isNothing x || isNothing y) then 
                     hanoi moves history height tower1 tower2 tower3 "Unvalid move"
                 else do
                 let f = fromJust x
@@ -122,38 +122,20 @@ findCorrectTower f t tower1 tower2 tower3 | (f==1 && t==2) = (tower1, tower2)
                                           | (f==3 && t==1) = (tower3, tower1)
                                           | otherwise      = (tower3, tower2)
 
--- TODO: Refaktorer
-nextRound moves history height f t (towerFrom, towerTo) tower1 tower2 tower3 str    | (f==1 && t==2) = do goto(0,0)
-                                                                                                          drawTowers (height + 1) height
-                                                                                                          drawRings towerFrom towerTo tower3 height height
-                                                                                                          goto(0,height+3)
-                                                                                                          hanoi (moves+1) (addHistory history towerFrom towerTo tower3) height towerFrom towerTo tower3 str              
-                                                                                    | (f==1 && t==3) = do goto(0,0)
-                                                                                                          drawTowers (height + 1) height
-                                                                                                          drawRings towerFrom tower2 towerTo height height
-                                                                                                          goto(0,height+3)
-                                                                                                          hanoi (moves+1) (addHistory history towerFrom tower2 towerTo) height towerFrom tower2 towerTo str
-                                                                                    | (f==2 && t==3) = do goto(0,0)
-                                                                                                          drawTowers (height + 1) height
-                                                                                                          drawRings tower1 towerFrom towerTo height height
-                                                                                                          goto(0,height+3)
-                                                                                                          hanoi (moves+1) (addHistory history tower1 towerFrom towerTo) height tower1 towerFrom towerTo str
-                                                                                    | (f==2 && t==1) = do goto(0,0)
-                                                                                                          drawTowers (height + 1) height
-                                                                                                          drawRings towerTo towerFrom tower3 height height
-                                                                                                          goto(0,height+3)
-                                                                                                          hanoi (moves+1) (addHistory history towerTo towerFrom tower3) height towerTo towerFrom tower3 str
-                                                                                    | (f==3 && t==1) = do goto(0,0)
-                                                                                                          drawTowers (height + 1) height
-                                                                                                          drawRings towerTo tower2 towerFrom height height
-                                                                                                          goto(0,height+3)
-                                                                                                          hanoi (moves+1) (addHistory history towerTo tower2 towerFrom) height towerTo tower2 towerFrom str
-                                                                                    | otherwise      = do goto(0,0)
-                                                                                                          drawTowers (height + 1) height
-                                                                                                          drawRings tower1 towerTo towerFrom height height
-                                                                                                          goto(0,height+3)
-                                                                                                          hanoi (moves+1) (addHistory history tower1 towerTo towerFrom) height tower1 towerTo towerFrom str                                               
 
+nextRoundHelper moves history height str tower1 tower2 tower3 = do  goto(0,0)
+                                                                    drawTowers (height + 1) height
+                                                                    drawRings tower1 tower2 tower3 height height
+                                                                    goto(0,height+3)
+                                                                    hanoi (moves+1) (addHistory history tower1 tower2 tower3) height tower1 tower2 tower3 str
+
+nextRound moves history height f t (towerFrom, towerTo) tower1 tower2 tower3 str    | (f==1 && t==2) = nextRoundHelper moves history height str towerFrom towerTo tower3
+                                                                                    | (f==1 && t==3) = nextRoundHelper moves history height str towerFrom tower2 towerTo
+                                                                                    | (f==2 && t==3) = nextRoundHelper moves history height str tower1 towerFrom towerTo
+                                                                                    | (f==2 && t==1) = nextRoundHelper moves history height str towerTo towerFrom tower3
+                                                                                    | (f==3 && t==1) = nextRoundHelper moves history height str towerTo tower2 towerFrom
+                                                                                    | otherwise      = nextRoundHelper moves history height str tower1 towerTo towerFrom                                               
+-- refaktorer?
 drawRings tower1 tower2 tower3 height width = do drawRingLayer tower1 tower2 tower3 height width
                                                  goto(0, height + 2)
                                                  
@@ -201,4 +183,4 @@ goto(x,y) = putStr("\ESC["++ show y ++";" ++ show x++"H")
 main :: IO ()
 main = do putStrLn "Start a new game with: b <nbOfRings>, or quit with: q "
           start
-          
+
