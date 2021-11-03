@@ -77,7 +77,6 @@ undoNMoves height history moves n str = do goto(0,0)
                                            drawRings (fst3 newHistory) (snd3 newHistory) (trd3 newHistory) height height
                                            hanoi (moves-n) [newHistory] height (fst3 newHistory) (snd3 newHistory) (trd3 newHistory) str
 
---lagrer ikke korrekt, resetter til 2. siste history
 resetAllMoves :: Int -> [([Int], [Int], [Int])] -> String -> IO ()
 resetAllMoves height history str = do drawBoard height
                                       drawRings (ringPos (head history) height) [] [] height height
@@ -145,7 +144,6 @@ drawRings :: [Int] -> [Int] -> [Int] -> Int -> Int -> IO ()
 drawRings tower1 tower2 tower3 height width = do drawRingLayer tower1 tower2 tower3 height width
                                                  goto(0, height + 2)
 
--- refaktorer?
 drawRingLayer :: [Int] -> [Int] -> [Int] -> Int -> Int -> IO ()
 drawRingLayer [] [] [] height width             = return ()
 drawRingLayer [] [] tower3 height width         = do drawRingLayerHelper 5 width height tower3
@@ -171,24 +169,20 @@ drawRingLayer tower1 tower2 tower3 height width = do drawRingLayerHelper 1 width
 drawRingLayerHelper :: Int -> Int -> Int -> [Int] -> IO ()
 drawRingLayerHelper n width height towerNr = writeAt ((n*width- ((head towerNr) - 1)), height + 1) (concat (take (head towerNr) (repeat("# "))))
                             
--- draws all the tower-layers
 drawTowers :: (Eq t, Num t) => t -> Int -> IO ()
 drawTowers 0 _ = return ()
 drawTowers height width = do writeTowerLayer height width
                              drawTowers (height - 1) width
 
--- draws each single tower-layer
 writeTowerLayer :: p -> Int -> IO ()
 writeTowerLayer height width = putStrLn (concat (take 3 (repeat ((concat (take (width-1) (repeat " "))) ++ "|" ++ (concat (take width (repeat " ")))))))
 
 writeAt (x,y) str = do goto (x,y)
                        putStr str
 
---clears the terminal-window
 clr :: IO ()
 clr = putStr "\ESC[2J"
 
--- changes pos of marker
 goto :: (Int, Int) -> IO ()
 goto(x,y) = putStr("\ESC["++ show y ++";" ++ show x++"H")
 
