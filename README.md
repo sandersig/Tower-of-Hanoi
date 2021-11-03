@@ -11,7 +11,7 @@ Tower of Hanoi is a mathematical puzzle consisting of three rods and a number of
 Run the file Oblig2.hs using GHCI in your terminal. Run the method "main" to get started.
 
 ### Commands:
-"b n" - Start a new game with n-disks. This can be done at any time during a game round.
-"f t" - Move a disk from rod f to rod t
-"z n" - Regret n-number of moves
-"q"   - Quit the game
+- "b n" - Start a new game with n-disks. This can be done at any time during a game round.
+- "f t" - Move a disk from rod f to rod t
+- "z n" - Regret n-number of moves
+- "q"   - Quit the game
